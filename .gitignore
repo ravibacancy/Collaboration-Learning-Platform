@@ -39,6 +39,7 @@ yarn-error.log*
 
 # local scratch
 .tmp_*
+.npm-cache/
 
 # vercel
 .vercel
