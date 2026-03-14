@@ -34,7 +34,8 @@ const PROVIDER_LABELS: Record<DocumentSourceRow["provider"], string> = {
 function buildPublicUrl(bucket: string, path: string): string {
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!base) return path;
-  return `${base.replace(/\\/$/, "")}/storage/v1/object/public/${bucket}/${path}`;
+  const trimmedBase = base.endsWith("/") ? base.slice(0, -1) : base;
+  return `${trimmedBase}/storage/v1/object/public/${bucket}/${path}`;
 }
 
 function formatAuditEvent(eventType: string): string {
@@ -72,7 +73,7 @@ export default async function ClassroomDetailPage({ params }: PageProps) {
     supabase.from("classrooms").select("id,name,description,join_code").eq("id", classroomId).single(),
     supabase
       .from("documents")
-      .select("id,title,file_type,status,created_at")
+      .select("id,title,file_type,status,created_at,file_path")
       .eq("classroom_id", classroomId)
       .order("created_at", { ascending: false }),
     supabase

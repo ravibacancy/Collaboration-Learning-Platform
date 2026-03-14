@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect, unstable_rethrow } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import type { Json } from "@/types/database";
 
 const CLASSROOM_ID_REGEX = /^[0-9a-fA-F-]{36}$/;
 const JOIN_CODE_REGEX = /^[A-Za-z0-9]{8}$/;
@@ -51,7 +52,7 @@ async function logAuditEvent(options: {
     classroom_id: options.classroomId,
     actor_id: options.actorId,
     event_type: options.eventType,
-    event_data: options.eventData ?? {},
+    event_data: (options.eventData ?? {}) as Json,
   });
 }
 

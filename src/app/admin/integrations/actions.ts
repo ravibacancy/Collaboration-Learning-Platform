@@ -5,17 +5,22 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
+const PROVIDERS = ["google_classroom", "canvas", "schoology", "microsoft_teams"] as const;
+type Provider = (typeof PROVIDERS)[number];
+
 export async function createIntegrationAdmin(formData: FormData) {
   const classroomId = String(formData.get("classroom_id") ?? "").trim();
   const provider = String(formData.get("provider") ?? "").trim();
   const displayName = String(formData.get("display_name") ?? "").trim();
   const externalClassId = String(formData.get("external_class_id") ?? "").trim();
 
-  if (!classroomId || !provider) {
+  if (!classroomId || !provider || !PROVIDERS.includes(provider as Provider)) {
     return;
   }
 
-  if (provider === "google_classroom") {
+  const typedProvider = provider as Provider;
+
+  if (typedProvider === "google_classroom") {
     redirect(`/api/integrations/google/start?classroomId=${classroomId}`);
   }
 
@@ -29,7 +34,7 @@ export async function createIntegrationAdmin(formData: FormData) {
   const service = createServiceClient();
   const { error } = await service.from("integration_connections").insert({
     classroom_id: classroomId,
-    provider,
+    provider: typedProvider,
     status: "connected",
     display_name: displayName || null,
     external_class_id: externalClassId || null,

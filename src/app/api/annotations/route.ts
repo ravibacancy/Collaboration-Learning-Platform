@@ -98,7 +98,7 @@ export async function POST(request: Request) {
     event_data: {
       annotation_type: annotationType,
       page_number: Number.isFinite(pageNumber) ? Math.max(1, pageNumber) : 1,
-    },
+    } as Json,
   });
 
   return NextResponse.json({ annotation: data }, { status: 201 });

@@ -5,6 +5,8 @@ import { isAdminEmail } from "@/lib/admin";
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;
+const STATUS_VALUES = ["draft", "active", "archived"] as const;
+type DocumentStatus = (typeof STATUS_VALUES)[number];
 
 function parseLimit(value: string | null) {
   const parsed = Number(value ?? DEFAULT_LIMIT);
@@ -126,7 +128,8 @@ export async function POST(request: Request) {
   const title = String(payload.title ?? "").trim();
   const filePath = String(payload.filePath ?? "").trim();
   const fileType = String(payload.fileType ?? "pdf").trim() || "pdf";
-  const status = String(payload.status ?? "active").trim() || "active";
+  const statusRaw = String(payload.status ?? "active").trim() || "active";
+  const status = (STATUS_VALUES.includes(statusRaw as DocumentStatus) ? statusRaw : "active") as DocumentStatus;
 
   if (!classroomId || !title || !filePath) {
     return NextResponse.json({ error: "classroomId, title, and filePath are required" }, { status: 400 });

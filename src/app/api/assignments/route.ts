@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { Json } from "@/types/database";
 import { createClient } from "@/lib/supabase/server";
 
 const DEFAULT_LIMIT = 50;
@@ -138,7 +139,7 @@ export async function POST(request: Request) {
     document_id: documentId,
     user_id: auth.user.id,
     event_type: "assignment_published",
-    event_data: { assignment_id: assignment.id },
+    event_data: { assignment_id: assignment.id } as Json,
   });
 
   return NextResponse.json({ assignment }, { status: 201 });

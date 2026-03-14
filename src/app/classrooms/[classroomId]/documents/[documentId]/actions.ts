@@ -87,7 +87,7 @@ export async function createAnnotation(formData: FormData) {
     event_data: {
       annotation_type: annotationType,
       page_number: Math.max(1, pageNumber),
-    },
+    } as Json,
   });
 
   revalidatePath(`/classrooms/${classroomId}/documents/${documentId}`);
@@ -163,7 +163,7 @@ export async function createComment(formData: FormData) {
     event_data: {
       length: body.length,
       mentioned: Boolean(mentionUserId),
-    },
+    } as Json,
   });
 
   const { data: document } = await supabase

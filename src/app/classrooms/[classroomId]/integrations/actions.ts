@@ -5,8 +5,11 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { fetchCourse, fetchCourseWork, fetchStudentSubmissions, toIsoFromGoogleDueDate } from "@/lib/google/classroom";
 import { refreshAccessToken } from "@/lib/google/oauth";
+import type { Json } from "@/types/database";
 
-const GOOGLE_PROVIDER = "google_classroom";
+const PROVIDERS = ["google_classroom", "canvas", "schoology", "microsoft_teams"] as const;
+type Provider = (typeof PROVIDERS)[number];
+const GOOGLE_PROVIDER: Provider = "google_classroom";
 const MAX_COURSEWORK_SYNC = 5;
 
 export async function createIntegrationConnection(formData: FormData) {
@@ -15,11 +18,13 @@ export async function createIntegrationConnection(formData: FormData) {
   const externalClassId = String(formData.get("external_class_id") ?? "").trim();
   const displayName = String(formData.get("display_name") ?? "").trim();
 
-  if (!classroomId || !provider) {
+  if (!classroomId || !provider || !PROVIDERS.includes(provider as Provider)) {
     return;
   }
 
-  if (provider === GOOGLE_PROVIDER) {
+  const typedProvider = provider as Provider;
+
+  if (typedProvider === GOOGLE_PROVIDER) {
     return;
   }
 
@@ -32,7 +37,7 @@ export async function createIntegrationConnection(formData: FormData) {
 
   await supabase.from("integration_connections").insert({
     classroom_id: classroomId,
-    provider,
+    provider: typedProvider,
     status: "connected",
     external_class_id: externalClassId || null,
     display_name: displayName || null,
@@ -71,7 +76,7 @@ function normalizeConfig(value: unknown): Record<string, unknown> {
 
 async function updateConnectionConfig(connectionId: string, config: Record<string, unknown>) {
   const supabase = await createClient();
-  await supabase.from("integration_connections").update({ config }).eq("id", connectionId);
+  await supabase.from("integration_connections").update({ config: config as Json }).eq("id", connectionId);
 }
 
 export async function syncGoogleClassroom(formData: FormData) {
@@ -189,7 +194,7 @@ export async function syncGoogleClassroom(formData: FormData) {
         trimmedCoursework.map((item) => ({
           connection_id: connection.id,
           classroom_id: classroomId,
-          course_external_id: connection.external_class_id,
+          course_external_id: connection.external_class_id!,
           external_id: item.id,
           title: item.title || "Untitled coursework",
           description: item.description || null,
@@ -215,7 +220,7 @@ export async function syncGoogleClassroom(formData: FormData) {
         submissions.map((submission) => ({
           connection_id: connection.id,
           classroom_id: classroomId,
-          course_external_id: connection.external_class_id,
+          course_external_id: connection.external_class_id!,
           coursework_external_id: item.id,
           external_id: submission.id,
           student_external_id: submission.userId || null,

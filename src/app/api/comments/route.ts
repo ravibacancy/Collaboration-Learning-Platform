@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { Json } from "@/types/database";
 import { createClient } from "@/lib/supabase/server";
 
 const DEFAULT_LIMIT = 50;
@@ -90,7 +91,7 @@ export async function POST(request: Request) {
     event_data: {
       length: body.length,
       mentioned: Boolean(mentionUserId),
-    },
+    } as Json,
   });
 
   const { data: document } = await supabase

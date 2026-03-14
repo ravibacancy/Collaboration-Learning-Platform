@@ -1,9 +1,11 @@
+import type { Json } from "@/types/database";
+
 type DemoClassroom = {
   id: string;
   name: string;
   description: string | null;
   created_at: string;
-  owner_id?: string | null;
+  owner_id: string;
   join_code?: string;
 };
 
@@ -11,11 +13,11 @@ type DemoDocument = {
   id: string;
   title: string;
   file_type: string;
-  status: string;
+  status: "draft" | "active" | "archived";
   created_at: string;
   classroom_id: string;
-  owner_id?: string | null;
-  file_path?: string;
+  owner_id: string;
+  file_path: string;
 };
 
 type DemoAssignment = {
@@ -25,6 +27,7 @@ type DemoAssignment = {
   published_at: string;
   classroom_id: string;
   document_id: string;
+  instructions: string | null;
 };
 
 type DemoNotification = {
@@ -34,9 +37,9 @@ type DemoNotification = {
   body: string | null;
   is_read: boolean;
   created_at: string;
-  reference_type?: string | null;
-  reference_id?: string | null;
-  user_id?: string;
+  reference_type: string | null;
+  reference_id: string | null;
+  user_id: string;
   sender_id?: string | null;
 };
 
@@ -47,8 +50,9 @@ type DemoIntegration = {
   display_name: string | null;
   external_class_id: string | null;
   created_at: string;
+  config: Json;
   updated_at?: string;
-  classroom_id?: string;
+  classroom_id: string;
 };
 
 type DemoProject = {
@@ -91,8 +95,15 @@ type DemoInvite = {
 
 type DemoAuditEvent = {
   id: string;
-  event_type: string;
-  event_data: Record<string, unknown>;
+  event_type:
+    | "invite_sent"
+    | "invite_accepted"
+    | "invite_declined"
+    | "invite_revoked"
+    | "member_joined"
+    | "member_left"
+    | "member_role_updated";
+  event_data: Json;
   created_at: string;
   actor_id: string | null;
 };
@@ -200,6 +211,7 @@ const demoAssignments: DemoAssignment[] = Array.from({ length: DEMO_LIMIT }, (_,
   published_at: isoDaysAgo(16 - index),
   classroom_id: demoDocuments[index % demoDocuments.length].classroom_id,
   document_id: demoDocuments[index % demoDocuments.length].id,
+  instructions: "Annotate key passages and add your reflection notes.",
 }));
 
 const demoNotifications: DemoNotification[] = Array.from({ length: DEMO_LIMIT }, (_, index) => ({
@@ -222,6 +234,7 @@ const demoIntegrations: DemoIntegration[] = Array.from({ length: 6 }, (_, index)
   display_name: `LMS Sync ${index + 1}`,
   external_class_id: `EXT-${1000 + index}`,
   created_at: isoDaysAgo(12 - index),
+  config: {},
   updated_at: isoDaysAgo(10 - index),
   classroom_id: demoClassrooms[index % demoClassrooms.length].id,
 }));
@@ -259,9 +272,16 @@ const demoInvites: DemoInvite[] = Array.from({ length: 4 }, (_, index) => ({
   created_at: isoDaysAgo(4 - index),
 }));
 
+const auditEventTypes: DemoAuditEvent["event_type"][] = [
+  "member_joined",
+  "invite_sent",
+  "member_left",
+  "invite_accepted",
+];
+
 const demoAuditEvents: DemoAuditEvent[] = Array.from({ length: 8 }, (_, index) => ({
   id: demoId("demo-audit", index),
-  event_type: ["member_joined", "invite_sent", "member_left", "invite_accepted"][index % 4],
+  event_type: auditEventTypes[index % auditEventTypes.length],
   event_data: { email: `user${index + 1}@demo.edu`, role: index % 2 === 0 ? "student" : "teacher" },
   created_at: isoDaysAgo(index),
   actor_id: demoUsers[index % demoUsers.length].id,

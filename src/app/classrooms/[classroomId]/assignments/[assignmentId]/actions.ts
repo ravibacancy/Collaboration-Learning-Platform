@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
 const REVIEWER_ROLES = new Set(["owner", "teacher"]);
-const VALID_STATUSES = new Set(["submitted", "reviewed", "returned"]);
+const VALID_STATUSES = ["submitted", "reviewed", "returned"] as const;
+type SubmissionStatus = (typeof VALID_STATUSES)[number];
 
 export async function submitAssignment(formData: FormData) {
   const classroomId = String(formData.get("classroom_id") ?? "").trim();
@@ -72,9 +73,11 @@ export async function reviewSubmission(formData: FormData) {
   const submissionId = String(formData.get("submission_id") ?? "").trim();
   const status = String(formData.get("status") ?? "").trim();
 
-  if (!classroomId || !assignmentId || !submissionId || !VALID_STATUSES.has(status)) {
+  if (!classroomId || !assignmentId || !submissionId || !VALID_STATUSES.includes(status as SubmissionStatus)) {
     return;
   }
+
+  const typedStatus = status as SubmissionStatus;
 
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getUser();
@@ -104,7 +107,7 @@ export async function reviewSubmission(formData: FormData) {
     return;
   }
 
-  await supabase.from("assignment_submissions").update({ status }).eq("id", submissionId);
+  await supabase.from("assignment_submissions").update({ status: typedStatus }).eq("id", submissionId);
 
   const { data: assignment } = await supabase.from("assignments").select("title").eq("id", assignmentId).single();
 
@@ -113,7 +116,7 @@ export async function reviewSubmission(formData: FormData) {
       user_id: submission.student_id,
       sender_id: auth.user.id,
       type: "submission",
-      title: status === "reviewed" ? "Submission reviewed" : "Submission returned",
+      title: typedStatus === "reviewed" ? "Submission reviewed" : "Submission returned",
       body: assignment?.title ?? null,
       reference_type: "assignment",
       reference_id: assignmentId,

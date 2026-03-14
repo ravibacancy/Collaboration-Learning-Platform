@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { Json } from "@/types/database";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isAdminEmail } from "@/lib/admin";
@@ -190,7 +191,7 @@ export async function POST(request: Request) {
     document_id: payload.documentId ?? null,
     user_id: auth.user.id,
     event_type: eventType,
-    event_data: payload.eventData ?? {},
+    event_data: (payload.eventData ?? {}) as Json,
   });
 
   if (error) {

@@ -4,8 +4,11 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import type { ClassroomRole } from "@/lib/rbac";
+import type { Json } from "@/types/database";
 
 const VALID_ROLES: ClassroomRole[] = ["owner", "teacher", "student"];
+const SOURCE_PROVIDERS = ["google_drive", "onedrive", "dropbox", "box", "url"] as const;
+type SourceProvider = (typeof SOURCE_PROVIDERS)[number];
 
 function normalizeFilename(value: string): string {
   return value.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -35,7 +38,7 @@ async function logAuditEvent(options: {
     classroom_id: options.classroomId,
     actor_id: options.actorId,
     event_type: options.eventType,
-    event_data: options.eventData ?? {},
+    event_data: (options.eventData ?? {}) as Json,
   });
 }
 
@@ -71,10 +74,10 @@ export async function createDocument(formData: FormData) {
     .select("id")
     .single();
 
-  if (document && sourceProvider && sourceProvider !== "none") {
+  if (document && sourceProvider && sourceProvider !== "none" && SOURCE_PROVIDERS.includes(sourceProvider as SourceProvider)) {
     await supabase.from("document_sources").insert({
       document_id: document.id,
-      provider: sourceProvider,
+      provider: sourceProvider as SourceProvider,
       source_url: filePath,
       external_id: sourceExternalId || null,
       created_by: auth.user.id,
@@ -163,7 +166,7 @@ export async function createDocumentUpload(formData: FormData) {
       file_name: file.name,
       size: file.size,
       mime_type: file.type || null,
-    },
+    } as Json,
   });
 
   revalidatePath(`/classrooms/${classroomId}`);
